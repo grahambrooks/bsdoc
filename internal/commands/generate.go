@@ -26,7 +26,8 @@ func NewGenerateCommand() *cobra.Command {
 	return cmd
 }
 
-func run(cmd *cobra.Command, args []string) error {
+func run(_ *cobra.Command, _ []string) error {
+
 	if projectPath == "" {
 		var err error
 		projectPath, err = os.Getwd()
@@ -52,11 +53,27 @@ func run(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer session.Destroy()
+	defer func() {
+		if err := session.Destroy(); err != nil {
+			log.Printf("[WARN] failed to destroy session: %v", err)
+		}
+	}()
 
-	// Event handler
+	// Event handler with improved logging
 	session.On(func(event copilot.SessionEvent) {
-		fmt.Printf("\n%s: %v\n", event.Type, event)
+		timestamp := time.Now().Format("2006-01-02 15:04:05")
+		switch event.Type {
+		case "message":
+			fmt.Printf("\n[%s] [MESSAGE] %v\n", timestamp, event.Data)
+		case "error":
+			fmt.Printf("\n[%s] [ERROR] %v\n", timestamp, event.Data)
+		case "progress":
+			fmt.Printf("\n[%s] [PROGRESS] %v\n", timestamp, event.Data)
+		case "done":
+			fmt.Printf("\n[%s] [DONE] %v\n", timestamp, event.Data)
+		default:
+			fmt.Printf("\n[%s] [EVENT: %s] %v\n", timestamp, event.Type, event.Data)
+		}
 	})
 
 	prompt := `Generate a comprehensive Backstage catalog-info.yaml file that includes:
@@ -73,7 +90,7 @@ Make intelligent decisions about component type (service, library, website, etc.
 
 Create 'docs' directory for each project and write markdown documentation for the component. Make sure that the documentation is referenced by the appropriate backstage entity definition.`
 
-	event, err := session.SendAndWait(copilot.MessageOptions{Prompt: prompt}, 5*60*time.Second0)
+	event, err := session.SendAndWait(copilot.MessageOptions{Prompt: prompt}, 5*60*time.Second)
 	if err != nil {
 		log.Fatal(err)
 	}
