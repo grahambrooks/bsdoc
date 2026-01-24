@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/github/copilot-sdk/go"
 	"github.com/spf13/cobra"
@@ -70,11 +71,9 @@ Use the Backstage catalog format version 1.0.0.
 
 Make intelligent decisions about component type (service, library, website, etc.) based on the project structure.
 
-Create 'docs' directory for each project and write markdown documentation for the component. Make sure that the documentation is referenced by the appropriate backstage entity definition.
+Create 'docs' directory for each project and write markdown documentation for the component. Make sure that the documentation is referenced by the appropriate backstage entity definition.`
 
-`
-
-	event, err := session.SendAndWait(copilot.MessageOptions{Prompt: prompt}, 0)
+	event, err := session.SendAndWait(copilot.MessageOptions{Prompt: prompt}, 5*60*time.Second0)
 	if err != nil {
 		log.Fatal(err)
 	}
