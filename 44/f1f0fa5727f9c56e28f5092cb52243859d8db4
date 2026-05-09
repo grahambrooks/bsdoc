@@ -1,0 +1,31 @@
+internal/commands/generate.go
+  s_77f35301529378::t_78584f212a01dd 4,8,32,38,44,48-49,51-52,57-58,62,67,69,72-75,77-99,101,118-119
+go.sum
+  ai_agent 1-2,6-12,17-20,30-37
+Makefile
+  s_63297f09d503ac::t_25d92dbaae793f 1,17-28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.4",
+  "base_commit_sha": "44f1f0fa5727f9c56e28f5092cb52243859d8db4",
+  "prompts": {},
+  "sessions": {
+    "s_63297f09d503ac": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3c5a37c5-7803-4680-b1c5-2a7214011a1f",
+        "model": "unknown"
+      },
+      "human_author": "Graham Brooks <graham@grahambrooks.com>"
+    },
+    "s_77f35301529378": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "431aaac2-adab-4c83-97e9-624171ad8641",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "Graham Brooks <graham@grahambrooks.com>"
+    }
+  }
+}
