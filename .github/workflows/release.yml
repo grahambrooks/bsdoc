@@ -1,0 +1,165 @@
+name: release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Override CalVer (e.g. 2026.5.8 or 2026.5.8.1). Leave empty to auto-compute."
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Test
+        run: go test ./...
+
+      - name: Compute CalVer
+        id: ver
+        run: |
+          set -euo pipefail
+          git fetch --tags --force
+          override='${{ github.event.inputs.version }}'
+          if [ -n "$override" ]; then
+            VERSION="$override"
+          else
+            BASE=$(date -u +'%Y.%-m.%-d')
+            VERSION="$BASE"
+            N=1
+            while git rev-parse -q --verify "refs/tags/v$VERSION" >/dev/null; do
+              VERSION="$BASE.$N"
+              N=$((N+1))
+            done
+          fi
+          echo "version=$VERSION" >>"$GITHUB_OUTPUT"
+          echo "tag=v$VERSION"   >>"$GITHUB_OUTPUT"
+          echo "Resolved version: $VERSION"
+
+      - name: Build cross-platform binaries
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          targets=(linux/amd64 linux/arm64 darwin/amd64 darwin/arm64)
+          for t in "${targets[@]}"; do
+            os="${t%/*}"
+            arch="${t#*/}"
+            stage="dist/stage-$os-$arch"
+            mkdir -p "$stage"
+            GOOS="$os" GOARCH="$arch" CGO_ENABLED=0 \
+              go build -trimpath \
+                -ldflags "-s -w -X main.version=${VERSION}" \
+                -o "$stage/bsdoc" ./cmd/bsdoc
+            cp README.md "$stage/" 2>/dev/null || true
+            tar -C "$stage" -czf "dist/bsdoc_${VERSION}_${os}_${arch}.tar.gz" .
+            rm -rf "$stage"
+          done
+          (cd dist && shasum -a 256 *.tar.gz > SHA256SUMS)
+          cat dist/SHA256SUMS
+
+      - name: Create tag
+        env:
+          TAG: ${{ steps.ver.outputs.tag }}
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "$TAG"
+          git push origin "$TAG"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ver.outputs.tag }}
+          name: ${{ steps.ver.outputs.tag }}
+          generate_release_notes: true
+          files: |
+            dist/*.tar.gz
+            dist/SHA256SUMS
+
+      - name: Update Homebrew formula
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+          TAG: ${{ steps.ver.outputs.tag }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          sha() { awk -v f="$1" '$2==f || $2=="*"f {print $1}' dist/SHA256SUMS; }
+          DARWIN_AMD64=$(sha "bsdoc_${VERSION}_darwin_amd64.tar.gz")
+          DARWIN_ARM64=$(sha "bsdoc_${VERSION}_darwin_arm64.tar.gz")
+          LINUX_AMD64=$(sha  "bsdoc_${VERSION}_linux_amd64.tar.gz")
+          LINUX_ARM64=$(sha  "bsdoc_${VERSION}_linux_arm64.tar.gz")
+          for v in DARWIN_AMD64 DARWIN_ARM64 LINUX_AMD64 LINUX_ARM64; do
+            if [ -z "${!v}" ]; then echo "Missing SHA for $v"; exit 1; fi
+          done
+
+          mkdir -p Formula
+          cat > Formula/bsdoc.rb <<RUBY
+          class Bsdoc < Formula
+            desc "Generate Backstage catalog documentation using GitHub Copilot"
+            homepage "https://github.com/${REPO}"
+            version "${VERSION}"
+
+            on_macos do
+              on_arm do
+                url "https://github.com/${REPO}/releases/download/${TAG}/bsdoc_${VERSION}_darwin_arm64.tar.gz"
+                sha256 "${DARWIN_ARM64}"
+              end
+              on_intel do
+                url "https://github.com/${REPO}/releases/download/${TAG}/bsdoc_${VERSION}_darwin_amd64.tar.gz"
+                sha256 "${DARWIN_AMD64}"
+              end
+            end
+
+            on_linux do
+              on_arm do
+                url "https://github.com/${REPO}/releases/download/${TAG}/bsdoc_${VERSION}_linux_arm64.tar.gz"
+                sha256 "${LINUX_ARM64}"
+              end
+              on_intel do
+                url "https://github.com/${REPO}/releases/download/${TAG}/bsdoc_${VERSION}_linux_amd64.tar.gz"
+                sha256 "${LINUX_AMD64}"
+              end
+            end
+
+            def install
+              bin.install "bsdoc"
+            end
+
+            test do
+              assert_match version.to_s, shell_output("#{bin}/bsdoc version")
+            end
+          end
+          RUBY
+
+          if git diff --quiet -- Formula/bsdoc.rb; then
+            echo "Formula unchanged, nothing to commit."
+            exit 0
+          fi
+
+          git add Formula/bsdoc.rb
+          git commit -m "chore(release): bump Homebrew formula to ${TAG} [skip ci]"
+          git push origin HEAD:${GITHUB_REF_NAME}
