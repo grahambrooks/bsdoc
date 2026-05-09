@@ -1,9 +1,11 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/github/copilot-sdk/go"
@@ -27,52 +29,76 @@ func NewGenerateCommand() *cobra.Command {
 }
 
 func run(_ *cobra.Command, _ []string) error {
+	logEvent("INFO", "Starting generate command")
 
 	if projectPath == "" {
 		var err error
 		projectPath, err = os.Getwd()
 		if err != nil {
+			logEvent("ERROR", fmt.Sprintf("Failed to get current directory: %v", err))
 			return fmt.Errorf("failed to get current directory: %w", err)
 		}
 	}
 	err := os.Chdir(projectPath)
 	if err != nil {
+		logEvent("ERROR", fmt.Sprintf("Failed to change directory: %v", err))
 		return err
 	}
 
+	ctx := context.Background()
+
 	client := copilot.NewClient(&copilot.ClientOptions{})
-	if err := client.Start(); err != nil {
+	if err := client.Start(ctx); err != nil {
+		logEvent("ERROR", fmt.Sprintf("Failed to start Copilot client: %v", err))
 		log.Fatal(err)
 	}
 	defer client.Stop()
 
-	// Create session
-	session, err := client.CreateSession(&copilot.SessionConfig{
+	logEvent("SESSION", "Creating Copilot session")
+	session, err := client.CreateSession(ctx, &copilot.SessionConfig{
 		Model: "gpt-5",
 	})
 	if err != nil {
+		logEvent("ERROR", fmt.Sprintf("Failed to create Copilot session: %v", err))
 		log.Fatal(err)
 	}
 	defer func() {
 		if err := session.Destroy(); err != nil {
-			log.Printf("[WARN] failed to destroy session: %v", err)
+			logEvent("WARN", fmt.Sprintf("Failed to destroy session: %v", err))
 		}
+		logEvent("SESSION", "Session destroyed")
 	}()
 
-	// Event handler with improved logging
+	resultChan := make(chan string, 1)
+	errChan := make(chan error, 1)
+	var content strings.Builder
+
 	session.On(func(event copilot.SessionEvent) {
-		timestamp := time.Now().Format("2006-01-02 15:04:05")
-		switch event.Type {
-		case "message":
-			fmt.Printf("\n[%s] [MESSAGE] %v\n", timestamp, event.Data)
-		case "error":
-			fmt.Printf("\n[%s] [ERROR] %v\n", timestamp, event.Data)
-		case "progress":
-			fmt.Printf("\n[%s] [PROGRESS] %v\n", timestamp, event.Data)
-		case "done":
-			fmt.Printf("\n[%s] [DONE] %v\n", timestamp, event.Data)
+		ts := time.Now().Format("15:04:05")
+		switch d := event.Data.(type) {
+		case *copilot.AssistantMessageDeltaData:
+			content.WriteString(d.DeltaContent)
+			logEventWithTS(ts, "ASSISTANT_DELTA", d.DeltaContent)
+		case *copilot.AssistantTurnEndData:
+			logEventWithTS(ts, "ASSISTANT_TURN_END", "Assistant turn ended, result ready")
+			resultChan <- content.String()
+		case *copilot.SessionErrorData:
+			logEventWithTS(ts, "SESSION_ERROR", d.Message)
+			errChan <- fmt.Errorf("session error: %s", d.Message)
+		case *copilot.UserMessageData:
+			logEventWithTS(ts, "USER_MESSAGE", d.Content)
+		case *copilot.ToolExecutionStartData:
+			logEventWithTS(ts, "TOOL_EXEC_START", d.ToolName)
+		case *copilot.ToolExecutionCompleteData:
+			logEventWithTS(ts, "TOOL_EXEC_COMPLETE", d.ToolCallID)
+		case *copilot.ToolExecutionProgressData:
+			logEventWithTS(ts, "TOOL_EXEC_PROGRESS", d.ProgressMessage)
+		case *copilot.AssistantMessageData:
+			logEventWithTS(ts, "ASSISTANT_MESSAGE", d.Content)
+		case *copilot.SessionUsageInfoData:
+			logEventWithTS(ts, "SESSION_USAGE", fmt.Sprintf("currentTokens=%v messages=%v", d.CurrentTokens, d.MessagesLength))
 		default:
-			fmt.Printf("\n[%s] [EVENT: %s] %v\n", timestamp, event.Type, event.Data)
+			logEventWithTS(ts, "EVENT", fmt.Sprintf("%s", event.Type))
 		}
 	})
 
@@ -83,18 +109,38 @@ func run(_ *cobra.Command, _ []string) error {
 - API specifications if applicable
 - Dependencies if detected
 - Links to documentation, repository, etc.\n
-
 Use the Backstage catalog format version 1.0.0.
 
 Make intelligent decisions about component type (service, library, website, etc.) based on the project structure.
 
 Create 'docs' directory for each project and write markdown documentation for the component. Make sure that the documentation is referenced by the appropriate backstage entity definition.`
 
-	event, err := session.SendAndWait(copilot.MessageOptions{Prompt: prompt}, 5*60*time.Second)
+	logEvent("PROMPT", "Sending prompt to Copilot session")
+	_, err = session.Send(ctx, copilot.MessageOptions{Prompt: prompt})
 	if err != nil {
-		log.Fatal(err)
+		logEvent("ERROR", fmt.Sprintf("Failed to send message: %v", err))
+		return fmt.Errorf("failed to send message: %w", err)
 	}
-	fmt.Printf("Session started with ID: %v\n", event)
 
-	return nil
+	select {
+	case result := <-resultChan:
+		logEvent("SUCCESS", "Documentation generation completed successfully")
+		fmt.Printf("Result: %s\n", result)
+		return nil
+	case err := <-errChan:
+		logEvent("FAILURE", fmt.Sprintf("Documentation generation failed: %v", err))
+		return err
+	case <-time.After(5 * 60 * time.Second):
+		logEvent("TIMEOUT", "Timeout waiting for response from Copilot session")
+		return fmt.Errorf("timeout waiting for response")
+	}
+}
+
+func logEvent(eventType, message string) {
+	ts := time.Now().Format("15:04:05")
+	fmt.Printf("[%s] [%s] %s\n", ts, eventType, message)
+}
+
+func logEventWithTS(ts, eventType, message string) {
+	fmt.Printf("[%s] [%s] %s\n", ts, eventType, message)
 }
