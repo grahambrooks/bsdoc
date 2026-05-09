@@ -1,0 +1,26 @@
+cmd/bsdoc/main.go
+  s_7be1fd316f9b3b::t_b9ec2c72118d0d 11
+Formula/bsdoc.rb
+  s_7be1fd316f9b3b::t_7ef98dbc3012b2 1-35
+.github/workflows/release.yml
+  s_7be1fd316f9b3b::t_db5620f624b8d8 1-165
+README.md
+  s_7be1fd316f9b3b::t_f57ea903c34c2e 86-106
+  s_7be1fd316f9b3b::t_67a34550969621 14-28,33-37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.4",
+  "base_commit_sha": "9ea10cfc344768c62aec8eab57abb556b630bcc0",
+  "prompts": {},
+  "sessions": {
+    "s_7be1fd316f9b3b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "166cb7f9-6d39-4ce5-9105-43fbee11da2d",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "Graham Brooks <graham@grahambrooks.com>"
+    }
+  }
+}
