@@ -1,27 +1,27 @@
 class Bsdoc < Formula
   desc "Generate Backstage catalog documentation using GitHub Copilot"
   homepage "https://github.com/grahambrooks/bsdoc"
-  version "2026.5.9"
+  version "2026.5.24"
 
   on_macos do
     on_arm do
-      url "https://github.com/grahambrooks/bsdoc/releases/download/v2026.5.9/bsdoc_2026.5.9_darwin_arm64.tar.gz"
-      sha256 "e9aaec1bbd51d8804c288a986aef06f1dc33acae6fc7ddc381b18ae44d51488c"
+      url "https://github.com/grahambrooks/bsdoc/releases/download/v2026.5.24/bsdoc_2026.5.24_darwin_arm64.tar.gz"
+      sha256 "3aa0da8f1ac3e0f093fc8e11448ded4c38556dafb4231722fe59d883fe1c6052"
     end
     on_intel do
-      url "https://github.com/grahambrooks/bsdoc/releases/download/v2026.5.9/bsdoc_2026.5.9_darwin_amd64.tar.gz"
-      sha256 "f2332ded6c63758d43431eb749219f0f370d9bfcfe3c24f63ca57733ed224137"
+      url "https://github.com/grahambrooks/bsdoc/releases/download/v2026.5.24/bsdoc_2026.5.24_darwin_amd64.tar.gz"
+      sha256 "b06d47bbaaea69935116ac6dbdabdea5719c0ad66f2803400d4c3b2eff95cf39"
     end
   end
 
   on_linux do
     on_arm do
-      url "https://github.com/grahambrooks/bsdoc/releases/download/v2026.5.9/bsdoc_2026.5.9_linux_arm64.tar.gz"
-      sha256 "05befce1f69abcde6e877c76ea3971fa9f67c61b1ccd97cfac325f3da9a21a7c"
+      url "https://github.com/grahambrooks/bsdoc/releases/download/v2026.5.24/bsdoc_2026.5.24_linux_arm64.tar.gz"
+      sha256 "8c1a9848461f83baa67c31bf517ab6f92bed271b73c4492e5c967cd5c11b5f3d"
     end
     on_intel do
-      url "https://github.com/grahambrooks/bsdoc/releases/download/v2026.5.9/bsdoc_2026.5.9_linux_amd64.tar.gz"
-      sha256 "864f512f7d4568ef9b8bb6ede7a9d8739adb68cb77f66c7b8fca18466e4cd9fd"
+      url "https://github.com/grahambrooks/bsdoc/releases/download/v2026.5.24/bsdoc_2026.5.24_linux_amd64.tar.gz"
+      sha256 "2007ab2cdc07d3927c27fba0dc0adaf932c7e1170d8a73eb018095676c3a3f53"
     end
   end
 
