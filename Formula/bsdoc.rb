@@ -5,8 +5,8 @@ class Bsdoc < Formula
 
   on_macos do
     on_arm do
-      url "https://github.com/grahambrooks/bsdoc/archive/refs/tags/v2026.8.14.tar.gz"
-      sha256 "1e4ad715e63c99e5663a9d9f1d20a2b5165bc4d612c1e928cc224067dfb75c13"
+      url "https://github.com/grahambrooks/bsdoc/archive/refs/tags/v2026.8.15.tar.gz"
+      sha256 "f039c04dbd0f72ff52b59eada7ee4bd5dc1b56342c631edbad0dc685b83822f4"
     end
     on_intel do
       url "https://github.com/grahambrooks/bsdoc/releases/download/v2026.5.24/bsdoc_2026.5.24_darwin_amd64.tar.gz"
