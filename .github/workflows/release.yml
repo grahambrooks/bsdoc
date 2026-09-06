@@ -3,6 +3,13 @@ name: release
 on:
   push:
     branches: [main]
+    # A formula-only commit must not cut a release. The release job writes
+    # Formula/bsdoc.rb itself, and Renovate used to bump it too, so without
+    # this every formula commit released again and re-staled the formula --
+    # a loop that cut ~100 empty releases between May and September 2026.
+    paths-ignore:
+      - 'Formula/**'
+      - '**.md'
   workflow_dispatch:
     inputs:
       version:
@@ -155,11 +162,14 @@ jobs:
           end
           RUBY
 
-          if git diff --quiet -- Formula/bsdoc.rb; then
+          # Stage first, then compare against the index: `git diff --quiet`
+          # on an untracked path reports "no change" and would silently skip
+          # committing the very first formula.
+          git add Formula/bsdoc.rb
+          if git diff --cached --quiet -- Formula/bsdoc.rb; then
             echo "Formula unchanged, nothing to commit."
             exit 0
           fi
 
-          git add Formula/bsdoc.rb
           git commit -m "chore(release): bump Homebrew formula to ${TAG} [skip ci]"
           git push origin HEAD:${GITHUB_REF_NAME}
