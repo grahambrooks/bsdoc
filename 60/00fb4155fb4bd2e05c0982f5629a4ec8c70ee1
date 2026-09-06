@@ -1,0 +1,20 @@
+internal/commands/generate.go
+  s_0db61a9ecbec37::t_9b2983f58ddee3 101
+  s_0db61a9ecbec37::t_63448fcd09b624 66-67,69
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "6000fb4155fb4bd2e05c0982f5629a4ec8c70ee1",
+  "prompts": {},
+  "sessions": {
+    "s_0db61a9ecbec37": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "62b6919d-32f8-4612-b82d-bdb48f9afdd5",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Graham Brooks <graham@grahambrooks.com>"
+    }
+  }
+}
