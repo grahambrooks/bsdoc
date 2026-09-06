@@ -63,10 +63,10 @@ func run(_ *cobra.Command, _ []string) error {
 		log.Fatal(err)
 	}
 	defer func() {
-		if err := session.Destroy(); err != nil {
-			logEvent("WARN", fmt.Sprintf("Failed to destroy session: %v", err))
+		if err := session.Disconnect(); err != nil {
+			logEvent("WARN", fmt.Sprintf("Failed to disconnect session: %v", err))
 		}
-		logEvent("SESSION", "Session destroyed")
+		logEvent("SESSION", "Session disconnected")
 	}()
 
 	resultChan := make(chan string, 1)
@@ -98,7 +98,7 @@ func run(_ *cobra.Command, _ []string) error {
 		case *copilot.SessionUsageInfoData:
 			logEventWithTS(ts, "SESSION_USAGE", fmt.Sprintf("currentTokens=%v messages=%v", d.CurrentTokens, d.MessagesLength))
 		default:
-			logEventWithTS(ts, "EVENT", fmt.Sprintf("%s", event.Type))
+			logEventWithTS(ts, "EVENT", string(event.Type()))
 		}
 	})
 
