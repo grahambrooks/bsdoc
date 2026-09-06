@@ -1,0 +1,22 @@
+renovate.json
+  s_0db61a9ecbec37::t_64a47e4e471d3a 1-2,10
+  s_0db61a9ecbec37::t_49cfa9c6fb23bc 3-9
+.github/workflows/release.yml
+  s_0db61a9ecbec37::t_53e3021670fbd0 6-12,165-169
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "2c43f42e556af6ae264c1f1c39ecd9b529ffa458",
+  "prompts": {},
+  "sessions": {
+    "s_0db61a9ecbec37": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "62b6919d-32f8-4612-b82d-bdb48f9afdd5",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Graham Brooks <graham@grahambrooks.com>"
+    }
+  }
+}
