@@ -3,7 +3,7 @@ module github.com/grahambrooks/bsdoc
 go 1.25.6
 
 require (
-	github.com/github/copilot-sdk/go v1.0.14
+	github.com/github/copilot-sdk/go v1.0.16
 	github.com/spf13/cobra v1.10.2
 )
 
