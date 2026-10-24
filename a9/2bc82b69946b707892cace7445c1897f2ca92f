@@ -1,0 +1,21 @@
+go.mod
+  s_c7db583e01ac64::t_5a433afa0b6490 3,6,13-14,21-24
+go.sum
+  s_c7db583e01ac64::t_9ce2cbb78edf09 6-9,11-12,29-30,33-40,42-43
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a92bc82b69946b707892cace7445c1897f2ca92f",
+  "prompts": {},
+  "sessions": {
+    "s_c7db583e01ac64": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a64f563f-ca61-4776-97cf-501db44bb230",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Graham Brooks <graham@grahambrooks.com>"
+    }
+  }
+}
