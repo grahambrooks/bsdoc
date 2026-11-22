@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/github/copilot-sdk/go"
+	copilot "github.com/microsoft/copilot-sdk/go/v2"
 	"github.com/spf13/cobra"
 )
 
@@ -47,7 +47,14 @@ func run(_ *cobra.Command, _ []string) error {
 
 	ctx := context.Background()
 
-	client := copilot.NewClient(&copilot.ClientOptions{})
+	client := copilot.NewClient(&copilot.ClientOptions{
+		// bsdoc writes catalog files and docs into the project, so it needs the
+		// coding-agent tool defaults (SDK v2 requires an explicit mode).
+		Mode: copilot.ModeCodingAgent,
+		// Keep the runtime in a child process, as SDK v1 did by default; v2
+		// otherwise loads the native runtime in-process.
+		Runtime: copilot.SpawnedStdioConnection{},
+	})
 	if err := client.Start(ctx); err != nil {
 		logEvent("ERROR", fmt.Sprintf("Failed to start Copilot client: %v", err))
 		log.Fatal(err)
@@ -55,7 +62,7 @@ func run(_ *cobra.Command, _ []string) error {
 	defer client.Stop()
 
 	logEvent("SESSION", "Creating Copilot session")
-	session, err := client.CreateSession(ctx, &copilot.SessionConfig{
+	session, err := client.CreateSession(ctx, &copilot.CreateSessionOptions{
 		Model: "gpt-5",
 	})
 	if err != nil {
